@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -9,7 +11,7 @@ import (
 
 type Block struct {
 	nonce        int
-	previousHash string
+	previousHash [32]byte
 	timestamp    int64
 	transactions []string
 }
@@ -20,12 +22,32 @@ type Blockchain struct {
 }
 
 func NewBlockchain() *Blockchain {
+	b := &Block{}
 	bc := new(Blockchain)
-	bc.CreateBlock(0, "hash #0 genesis block")
+	bc.CreateBlock(0, b.Hash())
 	return bc
 }
 
-func (bc *Blockchain) CreateBlock(nonce int, previousHash string) *Block {
+func (b *Block) Hash() [32]byte {
+	m, _ := json.Marshal(b)
+	return sha256.Sum256([]byte(m))
+}
+
+func (b *Block) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Timestamp    int64    `json:"timestamp"`
+		Nonce        int      `json:"nonce"`
+		PreviousHash [32]byte `json:"previous_hash"`
+		Transactions []string `json:"transactions"`
+	}{
+		Timestamp:    b.timestamp,
+		Nonce:        b.nonce,
+		PreviousHash: b.previousHash,
+		Transactions: b.transactions,
+	})
+}
+
+func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	b := NewBlock(nonce, previousHash)
 	bc.chain = append(bc.chain, b)
 	return b
@@ -39,7 +61,7 @@ func (bc *Blockchain) Print() {
 	fmt.Printf("%s\n", strings.Repeat("#", 39))
 }
 
-func NewBlock(nonce int, previousHash string) *Block {
+func NewBlock(nonce int, previousHash [32]byte) *Block {
 	b := new(Block)
 	b.timestamp = time.Now().UnixNano()
 	b.nonce = nonce
@@ -50,7 +72,7 @@ func NewBlock(nonce int, previousHash string) *Block {
 func (b *Block) print() {
 	fmt.Printf("timestamp\t%d\n", b.timestamp)
 	fmt.Printf("nonce\t\t%d\n", b.nonce)
-	fmt.Printf("previous_hash\t%s\n", b.previousHash)
+	fmt.Printf("previous_hash\t%x\n", b.previousHash)
 	fmt.Printf("transactions\t%s\n", b.transactions)
 
 }
@@ -60,10 +82,13 @@ func init() {
 }
 
 func main() {
-	blockchain := NewBlockchain()
-	blockchain.Print()
-	blockchain.CreateBlock(23, "hash #1")
-	blockchain.Print()
-	blockchain.CreateBlock(42, "hash #2")
-	blockchain.Print()
+	//blockchain := NewBlockchain()
+	//blockchain.Print()
+	//blockchain.CreateBlock(23, "hash #1")
+	//blockchain.Print()
+	//blockchain.CreateBlock(42, "hash #2")
+	//blockchain.Print()
+
+	block := &Block{nonce: 1}
+	fmt.Printf("%x\n", block.Hash())
 }
